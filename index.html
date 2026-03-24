@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduCareAI</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>EduCareAI — Interactive Clinical Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f5f0e8;
@@ -15,6 +15,7 @@
     --terracotta: #c0623a;
     --terracotta-light: #d4795a;
     --terracotta-dim: #e8c4b4;
+    --terracotta-bg: rgba(192,98,58,0.06);
     --sand: #b5956a;
     --text-primary: #2c2118;
     --text-secondary: #5a4535;
@@ -22,6 +23,7 @@
     --user-bubble: #fdf6ee;
     --ai-bubble: #ffffff;
     --shadow: rgba(80, 40, 10, 0.10);
+    --green: #6ab05a;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -49,8 +51,10 @@
   }
 
   .window {
-    width: 780px;
+    width: 820px;
     max-width: 100%;
+    height: 92vh;
+    max-height: 800px;
     border-radius: 18px;
     border: 1px solid var(--border);
     background: var(--surface);
@@ -61,6 +65,8 @@
     overflow: hidden;
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
     opacity: 0;
     transform: translateY(20px) scale(0.99);
     animation: windowIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
@@ -74,6 +80,7 @@
     padding: 13px 20px;
     background: var(--surface-2);
     border-bottom: 1px solid var(--border-light);
+    flex-shrink: 0;
   }
   .titlebar-dots { display: flex; gap: 7px; }
   .dot { width: 12px; height: 12px; border-radius: 50%; }
@@ -81,18 +88,27 @@
   .dot-yellow { background: #febc2e; }
   .dot-green { background: #28c840; }
   .titlebar-name { font-size: 12.5px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.03em; }
+  .titlebar-right { display: flex; align-items: center; gap: 10px; }
   .titlebar-badge {
     font-size: 10px; font-weight: 500; color: var(--terracotta);
-    border: 1px solid var(--terracotta-dim); background: rgba(192,98,58,0.06);
+    border: 1px solid var(--terracotta-dim); background: var(--terracotta-bg);
     padding: 2px 9px; border-radius: 20px; letter-spacing: 0.07em; text-transform: uppercase;
   }
+  .clear-btn {
+    font-size: 10px; font-weight: 500; color: var(--text-muted);
+    border: 1px solid var(--border); background: transparent;
+    padding: 2px 9px; border-radius: 20px; letter-spacing: 0.05em;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .clear-btn:hover { color: var(--terracotta); border-color: var(--terracotta-dim); background: var(--terracotta-bg); }
 
   /* Header */
   .header {
-    padding: 22px 28px 18px;
+    padding: 18px 28px 14px;
     border-bottom: 1px solid var(--border-light);
     display: flex; align-items: center; gap: 16px;
     background: linear-gradient(to bottom, #fffdf9, var(--surface));
+    flex-shrink: 0;
   }
   .logo-mark {
     width: 44px; height: 44px; border-radius: 12px;
@@ -104,25 +120,43 @@
   .header-text h1 { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--text-primary); font-weight: 600; }
   .header-text p { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
   .header-status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11px; color: #6a8f5a; font-weight: 500; }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #6ab05a; box-shadow: 0 0 0 2px rgba(106,176,90,0.2); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 2px rgba(106,176,90,0.2); }
 
   /* Chat area */
   .chat-area {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
     padding: 26px 28px;
     display: flex; flex-direction: column; gap: 20px;
     background: var(--surface);
+    scroll-behavior: smooth;
   }
+  .chat-area::-webkit-scrollbar { width: 6px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
   .session-divider {
     display: flex; align-items: center; gap: 10px;
-    opacity: 0; animation: fadeIn 0.5s ease 0.8s forwards;
   }
   .session-divider::before, .session-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
   .session-divider span { font-size: 10px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 
+  /* Empty state */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+    opacity: 0.6;
+  }
+  .empty-icon {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: var(--terracotta-bg); border: 1px solid var(--terracotta-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif; font-size: 24px; color: var(--terracotta);
+  }
+  .empty-state p { font-size: 13px; color: var(--text-muted); text-align: center; line-height: 1.6; }
+
   /* Bubbles */
-  .msg-user { align-self: flex-end; max-width: 68%; }
-  .msg-ai { align-self: flex-start; max-width: 100%; }
+  .msg-user { align-self: flex-end; max-width: 68%; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .msg-ai { align-self: flex-start; max-width: 100%; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
   .msg-user .label { font-size: 10.5px; color: var(--text-muted); text-align: right; margin-bottom: 6px; letter-spacing: 0.05em; font-weight: 500; }
   .msg-user .bubble {
@@ -144,9 +178,11 @@
     padding: 18px 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.75;
     box-shadow: 0 2px 12px rgba(80,40,10,0.07);
   }
+  .msg-ai .bubble p { margin-bottom: 10px; }
+  .msg-ai .bubble p:last-child { margin-bottom: 0; }
 
   /* Thinking dots */
-  .thinking-dots { display: flex; gap: 3px; }
+  .thinking-dots { display: inline-flex; gap: 3px; vertical-align: middle; }
   .thinking-dots span {
     width: 4px; height: 4px; border-radius: 50%; background: var(--terracotta-light);
     animation: dotBounce 1.0s ease-in-out infinite;
@@ -155,13 +191,13 @@
   .thinking-dots span:nth-child(3) { animation-delay: 0.30s; }
   @keyframes dotBounce { 0%,100% { transform: translateY(0); opacity: 0.5; } 50% { transform: translateY(-3px); opacity: 1; } }
 
-  /* Content helpers */
+  /* Rich response formatting */
   .resp-intro { font-size: 13px; color: var(--text-secondary); line-height: 1.75; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border-light); }
   .resp-intro .highlight { font-weight: 600; color: var(--text-primary); }
 
   .section-heading {
     font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 600;
-    color: var(--text-primary); margin-bottom: 10px;
+    color: var(--text-primary); margin-bottom: 10px; margin-top: 14px;
     display: flex; align-items: center; gap: 8px;
   }
   .section-heading::before { content: ''; width: 14px; height: 2px; background: var(--terracotta); border-radius: 2px; flex-shrink: 0; }
@@ -169,12 +205,12 @@
   .guideline-tag {
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em;
-    color: var(--terracotta); background: rgba(192,98,58,0.07); border: 1px solid var(--terracotta-dim);
-    padding: 3px 9px; border-radius: 5px; margin-bottom: 8px;
+    color: var(--terracotta); background: var(--terracotta-bg); border: 1px solid var(--terracotta-dim);
+    padding: 3px 9px; border-radius: 5px; margin-bottom: 8px; margin-top: 12px;
   }
   .guideline-tag::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--terracotta); opacity: 0.7; }
 
-  .bullet-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .bullet-list { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-top: 6px; }
   .bullet-list li { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; padding-left: 14px; border-left: 2px solid var(--terracotta-dim); }
   .bullet-list li strong { color: var(--text-primary); font-weight: 600; }
 
@@ -186,64 +222,75 @@
   }
   .consideration-box strong { color: var(--terracotta); font-weight: 600; }
 
-  .resp-section { margin-bottom: 14px; }
-  .resp-section:last-child { margin-bottom: 0; }
+  .followup-question {
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-light);
+    font-size: 13px; color: var(--text-primary); line-height: 1.7; font-weight: 500;
+  }
+  .followup-question .highlight { font-weight: 600; color: var(--terracotta); }
+
+  /* Streaming text animation */
+  @keyframes fadeWord { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+  .stream-word { display: inline; animation: fadeWord 0.15s ease forwards; }
 
   /* Input bar */
   .input-bar {
-    padding: 14px 28px 20px;
+    padding: 14px 28px 18px;
     border-top: 1px solid var(--border-light);
     background: linear-gradient(to bottom, var(--surface), #fdf8f0);
+    flex-shrink: 0;
   }
   .input-inner {
     display: flex; align-items: center; gap: 12px;
     background: #fff; border: 1.5px solid var(--border);
-    border-radius: 12px; padding: 12px 16px;
+    border-radius: 12px; padding: 6px 8px 6px 16px;
     box-shadow: 0 1px 4px rgba(80,40,10,0.06);
+    transition: border-color 0.25s;
   }
+  .input-inner:focus-within { border-color: var(--terracotta-dim); box-shadow: 0 1px 4px rgba(192,98,58,0.12); }
   .input-icon { color: var(--sand); font-size: 14px; flex-shrink: 0; }
-  .input-text { flex: 1; font-size: 13px; color: var(--text-muted); white-space: nowrap; overflow: hidden; }
+  .input-field {
+    flex: 1; font-family: 'DM Sans', sans-serif; font-size: 13.5px;
+    color: var(--text-primary); background: none; border: none; outline: none;
+    padding: 8px 0; resize: none; line-height: 1.5;
+    max-height: 100px; overflow-y: auto;
+  }
+  .input-field::placeholder { color: var(--text-muted); }
   .send-btn {
-    width: 32px; height: 32px; border-radius: 9px;
+    width: 36px; height: 36px; border-radius: 10px;
     background: linear-gradient(145deg, #c0623a 0%, #a5502e 100%);
     border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
     flex-shrink: 0; box-shadow: 0 2px 6px rgba(192,98,58,0.35);
+    transition: all 0.2s;
   }
-  .send-btn svg { width: 14px; height: 14px; fill: #fdf6ee; }
+  .send-btn:hover { transform: scale(1.05); box-shadow: 0 3px 10px rgba(192,98,58,0.45); }
+  .send-btn:active { transform: scale(0.97); }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .send-btn svg { width: 15px; height: 15px; fill: #fdf6ee; }
 
   /* Footer */
   .footer {
-    padding: 10px 28px 15px; display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 28px 14px; display: flex; align-items: center; justify-content: space-between;
     background: var(--surface-2); border-top: 1px solid var(--border-light);
+    flex-shrink: 0;
   }
   .footer-note { font-size: 10.5px; color: var(--text-muted); letter-spacing: 0.03em; }
   .footer-brand { font-family: 'Playfair Display', serif; font-size: 12px; color: var(--sand); letter-spacing: 0.05em; font-style: italic; }
 
-  /* ── Animation classes ── */
-  .hidden { opacity: 0; transform: translateY(10px); transition: none; }
-
-  @keyframes fadeIn { to { opacity: 1; } }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .anim-in { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-  .typewriter-wrap {
-    display: inline; overflow: hidden; white-space: nowrap;
-    border-right: 2px solid var(--terracotta);
+  @media (max-width: 600px) {
+    body { padding: 0; }
+    .window { height: 100vh; max-height: none; border-radius: 0; border: none; }
+    .msg-user { max-width: 85%; }
+    .header { padding: 14px 16px 12px; }
+    .chat-area { padding: 16px; }
+    .input-bar { padding: 10px 16px 14px; }
   }
-  .cursor-blink {
-    display: inline-block; width: 2px; height: 13px;
-    background: var(--terracotta); vertical-align: middle; margin-left: 1px;
-    animation: blink 0.7s step-end infinite;
-  }
-  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 </style>
 </head>
 <body>
 
 <div class="window">
-
   <div class="titlebar">
     <div class="titlebar-dots">
       <div class="dot dot-red"></div>
@@ -251,7 +298,10 @@
       <div class="dot dot-green"></div>
     </div>
     <div class="titlebar-name">EduCareAI — Clinical Assistant</div>
-    <div class="titlebar-badge">Secure Session</div>
+    <div class="titlebar-right">
+      <button class="clear-btn" onclick="clearChat()">New Session</button>
+      <div class="titlebar-badge">Secure Session</div>
+    </div>
   </div>
 
   <div class="header">
@@ -266,100 +316,18 @@
     </div>
   </div>
 
-  <!-- Chat -->
   <div class="chat-area" id="chat">
-
-    <div class="session-divider" style="opacity:0;animation:fadeIn 0.5s ease 0.6s forwards;">
-      <span>New clinical session</span>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">✦</div>
+      <p>Ask a question about culturally safe<br>Indigenous health care practices</p>
     </div>
-
-    <!-- Turn 1: User Q1 -->
-    <div class="msg-user hidden" id="q1">
-      <div class="label">Clinician</div>
-      <div class="bubble">My patient identifies as Two-Spirited. What does that mean?</div>
-    </div>
-
-    <!-- Turn 1: AI thinking -->
-    <div class="msg-ai hidden" id="thinking1">
-      <div class="label">
-        EduCareAI · Clinical Guideline
-        <div class="thinking-dots"><span></span><span></span><span></span></div>
-      </div>
-    </div>
-
-    <!-- Turn 1: AI response -->
-    <div class="msg-ai hidden" id="a1">
-      <div class="label">EduCareAI · Clinical Guideline</div>
-      <div class="bubble">
-        <div class="resp-intro">
-          <span class="highlight">Two-Spirit (2S)</span> is a term used by some Indigenous people to describe their sexual, gender, and spiritual identity. It is important to recognize that it is <span class="highlight">not merely an "Indigenous version" of being LGBTQ+</span> — it is a specific cultural role that was largely suppressed by colonial systems and is now being reclaimed.
-        </div>
-        <div class="resp-section" id="a1s1" style="opacity:0;">
-          <div class="section-heading">Origin of the Term</div>
-          <p class="note-text">The term was proposed in 1990 at the third annual Intertribal Native American/First Nations Gay and Lesbian American Conference in Winnipeg. It serves as an umbrella term for Indigenous people who carry both a masculine and feminine spirit.</p>
-        </div>
-        <div class="resp-section" id="a1s2" style="opacity:0;">
-          <ul class="bullet-list">
-            <li><strong>A Spiritual Identity:</strong> For many, 2S describes a sacred, traditional role within the community — such as being a healer, a name-giver, or a mediator.</li>
-            <li><strong>Distinct from Western Labels:</strong> While a 2S person may also identify as gay, trans, or non-binary, "Two-Spirit" emphasizes the intersection of their Indigenous identity and gender/sexuality.</li>
-            <li><strong>Nation-Specific:</strong> Many Nations have their own terms that predate "Two-Spirit" (e.g., Winkté in Lakota, Nàdleehé in Navajo, or A'nó:wà:ne in some Haudenosaunee contexts).</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Turn 2: User Q2 -->
-    <div class="msg-user hidden" id="q2">
-      <div class="label">Clinician</div>
-      <div class="bubble">Is there any special consideration when providing mental health care to them?</div>
-    </div>
-
-    <!-- Turn 2: AI thinking -->
-    <div class="msg-ai hidden" id="thinking2">
-      <div class="label">
-        EduCareAI · Clinical Guideline
-        <div class="thinking-dots"><span></span><span></span><span></span></div>
-      </div>
-    </div>
-
-    <!-- Turn 2: AI response -->
-    <div class="msg-ai hidden" id="a2">
-      <div class="label">EduCareAI · Clinical Guideline</div>
-      <div class="bubble">
-        <div class="resp-intro">
-          The goal is to move from <em>cultural competence</em> (knowing facts) to <span class="highlight">cultural safety</span> — where the patient feels genuinely respected and empowered throughout their care.
-        </div>
-        <div class="resp-section" id="a2s1" style="opacity:0;">
-          <div class="guideline-tag">1 · Impact of Colonialism</div>
-          <p class="note-text">Mental health challenges in 2S individuals are often rooted in intergenerational trauma. Residential schools targeted gender-diverse roles for erasure, replacing them with strict Western binaries.</p>
-          <div class="consideration-box"><strong>Consideration:</strong> Recognize that reclaiming their 2S identity may be a core part of your patient's healing journey from colonial trauma.</div>
-        </div>
-        <div class="resp-section" id="a2s2" style="opacity:0;">
-          <div class="guideline-tag">2 · Holistic Framework</div>
-          <p class="note-text">Wellness for a 2S patient often requires balance across all four quadrants of the Medicine Wheel: Physical, Emotional, Mental, and Spiritual.</p>
-          <div class="consideration-box"><strong>Consideration:</strong> Ask if the patient has access to traditional healing, Elders, or Knowledge Keepers. In Toronto, Anishnawbe Health offers integrated care combining clinical therapy with traditional ceremonies.</div>
-        </div>
-        <div class="resp-section" id="a2s3" style="opacity:0;">
-          <div class="guideline-tag">3 · Affirming Communication</div>
-          <ul class="bullet-list">
-            <li><strong>Ask about pronouns and terms:</strong> "Two-Spirit" is an umbrella — your patient may prefer a Nation-specific term.</li>
-            <li><strong>Assess social belonging:</strong> Some 2S individuals face "double discrimination" — within their own community and from the Western LGBTQ+ community. Isolation is a high-risk factor for suicide and substance use.</li>
-            <li><strong>Avoid pathologizing:</strong> Ensure their identity is seen as a source of strength and resilience, not a disorder or symptom.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- Input bar -->
   <div class="input-bar">
     <div class="input-inner">
       <span class="input-icon">✦</span>
-      <div class="input-text" id="inputText">
-        <span id="typewriterSpan"></span><span class="cursor-blink" id="cursor"></span>
-      </div>
-      <button class="send-btn">
+      <textarea class="input-field" id="inputField" rows="1" placeholder="Ask about clinical guidelines…" onkeydown="handleKey(event)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
         <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
       </button>
     </div>
@@ -369,122 +337,433 @@
     <div class="footer-note">For clinical use only · Always verify with community context</div>
     <div class="footer-brand">EduCareAI</div>
   </div>
-
 </div>
 
 <script>
-  // Helper: show element with slide-up animation
-  function show(id, delay = 0) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        el.classList.remove('hidden');
-        el.classList.add('anim-in');
-        el.addEventListener('animationend', resolve, { once: true });
-      }, delay);
+const chat = document.getElementById('chat');
+const inputField = document.getElementById('inputField');
+const sendBtn = document.getElementById('sendBtn');
+const emptyState = document.getElementById('emptyState');
+
+let isGenerating = false;
+let conversationHistory = [];
+let conversationState = null;
+let activeMultiTurnEntry = null;
+
+// ─── Knowledge Base ───────────────────────────────────────────
+const knowledgeBase = [
+  {
+    keywords: ['two-spirit', 'two spirit', '2s', 'two-spirited', 'what does', 'identify'],
+    response: {
+      intro: `<span class="highlight">Two-Spirit (2S)</span> is a term used by some Indigenous people to describe their sexual, gender, and spiritual identity. It is important to recognize that it is <span class="highlight">not merely an "Indigenous version" of being LGBTQ+</span> — it is a specific cultural role that was largely suppressed by colonial systems and is now being reclaimed.`,
+      sections: [
+        {
+          type: 'heading', title: 'Origin of the Term',
+          content: `<p class="note-text">The term was proposed in 1990 at the third annual Intertribal Native American/First Nations Gay and Lesbian American Conference in Winnipeg. It serves as an umbrella term for Indigenous people who carry both a masculine and feminine spirit.</p>`
+        },
+        {
+          type: 'bullets',
+          content: `<ul class="bullet-list">
+            <li><strong>A Spiritual Identity:</strong> For many, 2S describes a sacred, traditional role within the community — such as being a healer, a name-giver, or a mediator.</li>
+            <li><strong>Distinct from Western Labels:</strong> While a 2S person may also identify as gay, trans, or non-binary, "Two-Spirit" emphasizes the intersection of their Indigenous identity and gender/sexuality.</li>
+            <li><strong>Nation-Specific:</strong> Many Nations have their own terms that predate "Two-Spirit" (e.g., Winkté in Lakota, Nàdleehé in Navajo, or A'nó:wà:ne in some Haudenosaunee contexts).</li>
+          </ul>`
+        }
+      ]
+    }
+  },
+  {
+    keywords: ['mental health', 'care', 'consideration', 'providing', 'therapy', 'counseling', 'counselling'],
+    response: {
+      intro: `The goal is to move from <em>cultural competence</em> (knowing facts) to <span class="highlight">cultural safety</span> — where the patient feels genuinely respected and empowered throughout their care.`,
+      sections: [
+        {
+          type: 'guideline', tag: '1 · Impact of Colonialism',
+          content: `<p class="note-text">Mental health challenges in 2S individuals are often rooted in intergenerational trauma. Residential schools targeted gender-diverse roles for erasure, replacing them with strict Western binaries.</p>
+          <div class="consideration-box"><strong>Consideration:</strong> Recognize that reclaiming their 2S identity may be a core part of your patient's healing journey from colonial trauma.</div>`
+        },
+        {
+          type: 'guideline', tag: '2 · Holistic Framework',
+          content: `<p class="note-text">Wellness for a 2S patient often requires balance across all four quadrants of the Medicine Wheel: Physical, Emotional, Mental, and Spiritual.</p>
+          <div class="consideration-box"><strong>Consideration:</strong> Ask if the patient has access to traditional healing, Elders, or Knowledge Keepers. In Toronto, Anishnawbe Health offers integrated care combining clinical therapy with traditional ceremonies.</div>`
+        },
+        {
+          type: 'guideline', tag: '3 · Affirming Communication',
+          content: `<ul class="bullet-list">
+            <li><strong>Ask about pronouns and terms:</strong> "Two-Spirit" is an umbrella — your patient may prefer a Nation-specific term.</li>
+            <li><strong>Assess social belonging:</strong> Some 2S individuals face "double discrimination" — within their own community and from the Western LGBTQ+ community. Isolation is a high-risk factor for suicide and substance use.</li>
+            <li><strong>Avoid pathologizing:</strong> Ensure their identity is seen as a source of strength and resilience, not a disorder or symptom.</li>
+          </ul>`
+        }
+      ]
+    }
+  },
+  {
+    keywords: ['medicine wheel', 'holistic', 'framework', 'treatment plan', 'four quadrant', 'wellness model'],
+    response: {
+      intro: `The <span class="highlight">Medicine Wheel</span> is a holistic framework used across many First Nations. In a clinical context, it serves as a powerful lens for treatment planning — ensuring no dimension of the patient's wellbeing is overlooked.`,
+      sections: [
+        {
+          type: 'heading', title: 'The Four Quadrants',
+          content: `<ul class="bullet-list">
+            <li><strong>Physical (East):</strong> Diet, exercise, sleep, substance use, chronic conditions. Consider whether the patient has access to traditional foods, land-based activities, and culturally appropriate health services.</li>
+            <li><strong>Emotional (South):</strong> Grief, joy, anger, belonging. Explore the patient's relationship with their family, community, and cultural identity. Emotional wellness often involves reconnecting with ceremony.</li>
+            <li><strong>Mental (West):</strong> Thoughts, learning, self-concept. Address internalized stigma from colonial narratives. Support education about their own cultural traditions and history as a therapeutic tool.</li>
+            <li><strong>Spiritual (North):</strong> Purpose, connection to Creator, land, ancestors. Ask whether they engage in ceremony, smudging, sweat lodge, or other spiritual practices. Never assume — always ask.</li>
+          </ul>`
+        },
+        {
+          type: 'guideline', tag: 'Clinical Application',
+          content: `<p class="note-text">When building a treatment plan, map goals across all four quadrants. A plan that addresses only the Mental quadrant (e.g., CBT alone) may feel incomplete for a patient whose worldview is inherently holistic.</p>
+          <div class="consideration-box"><strong>Consideration:</strong> Co-create the treatment plan with the patient. Position yourself as a learner. Ask: "What does wellness look like for you?" rather than imposing a clinical-only framework.</div>`
+        }
+      ]
+    }
+  },
+  {
+    keywords: ['intergenerational', 'trauma', 'residential school', 'colonial', 'historical', 'sixties scoop'],
+    response: {
+      intro: `<span class="highlight">Intergenerational trauma</span> (also called historical or transgenerational trauma) refers to the cumulative psychological wounding transmitted across generations as a result of colonization, residential schools, the Sixties Scoop, and ongoing systemic oppression.`,
+      sections: [
+        {
+          type: 'guideline', tag: '1 · Understanding the Mechanisms',
+          content: `<ul class="bullet-list">
+            <li><strong>Disrupted attachment:</strong> Children removed from families and placed in residential schools did not receive models for healthy parenting. This cycle of disrupted attachment propagates through generations.</li>
+            <li><strong>Loss of language and culture:</strong> Suppression of Indigenous languages and ceremonies severed connections to identity and community, creating a grief that is both personal and collective.</li>
+            <li><strong>Epigenetic factors:</strong> Emerging research suggests that extreme stress can alter gene expression patterns, potentially transmitting stress responses biologically.</li>
+          </ul>`
+        },
+        {
+          type: 'guideline', tag: '2 · Clinical Considerations',
+          content: `<p class="note-text">Avoid framing intergenerational trauma solely as individual pathology. The source of suffering is systemic — and healing often requires community-level and culturally-rooted interventions alongside individual therapy.</p>
+          <div class="consideration-box"><strong>Consideration:</strong> Ask about family history with residential schools, child welfare systems, or forced relocation — but only when rapport is established. These are deeply painful topics. Follow the patient's lead on when and how to discuss them.</div>`
+        },
+        {
+          type: 'guideline', tag: '3 · Healing Approaches',
+          content: `<ul class="bullet-list">
+            <li><strong>Land-based healing:</strong> Programs that reconnect individuals with the land (hunting, harvesting, canoe trips) show strong outcomes for Indigenous peoples experiencing trauma-related symptoms.</li>
+            <li><strong>Ceremony and culture:</strong> Access to Elders, sweat lodges, talking circles, and other traditional practices can be powerful complements to clinical treatment.</li>
+            <li><strong>Strengths-based framing:</strong> Emphasize resilience. Indigenous peoples have survived centuries of deliberate cultural destruction — this survival itself is a source of profound strength.</li>
+          </ul>`
+        }
+      ]
+    }
+  },
+  {
+    keywords: ['sweat lodge', 'hypertension', 'hydrochlorothiazide', 'ceremony', 'blood pressure', 'hctz', 'sweat', 'lodge', 'pcp', 'consider', 'first'],
+    multiTurn: true,
+    response: {
+      intro: `This is an excellent question — and the fact that you're asking it shows you understand that <span class="highlight">supporting this patient means honouring both his medical needs and the cultural significance of this ceremony</span>. A sweat lodge is not a "sauna" — it is a sacred healing practice. Your role is to ensure he can participate safely, not to gatekeep his access to ceremony.`,
+      sections: [
+        {
+          type: 'guideline', tag: '1 · Start with the Relationship, Not the Risk',
+          content: `<p class="note-text">Before adjusting medications or issuing warnings, <strong>have a conversation</strong>. Ask your patient what this ceremony means to him. Is this his first sweat? Has he participated before? Understanding his relationship with this practice will shape your approach far more than a blood pressure reading alone.</p>`
+        },
+        {
+          type: 'guideline', tag: '2 · Collaborate with the Ceremony Leader',
+          content: `<p class="note-text">The Oshkaabewis (lodge keeper or ceremony leader) has deep knowledge about the physical demands of the lodge — they manage the number of rounds, the intensity of the heat, and they watch participants closely. This person is a <strong>partner in your patient's safety</strong>, not a variable to control for.</p>
+          <ul class="bullet-list">
+            <li><strong>With your patient's consent</strong>, consider whether a brief conversation with the ceremony leader would be appropriate. Some lodge keepers welcome knowing if a participant has a health consideration so they can adjust accordingly (e.g., seating position, number of rounds).</li>
+            <li><strong>Respect protocol:</strong> Do not show up at the ceremony or contact the leader directly without your patient's explicit invitation. This is his spiritual space.</li>
+          </ul>`
+        }
+      ],
+      followUp: {
+        question: `To provide specific medication guidance, could you tell me <span class="highlight">what dosage of hydrochlorothiazide</span> your patient is currently taking?`,
+        nextState: 'awaiting_hctz_dosage'
+      }
+    },
+    followUpResponse: {
+      intro: `Thank you. At <span class="highlight">25 mg HCTZ daily</span>, this is a standard dose — here's how to tailor your support for the ceremony:`,
+      sections: [
+        {
+          type: 'guideline', tag: '3 · Medical Considerations — In Context',
+          content: `<p class="note-text">Now the clinical layer — framed as support, not restriction:</p>
+          <ul class="bullet-list">
+            <li><strong>Hydrochlorothiazide and heat:</strong> At 25 mg, HCTZ produces a moderate diuretic effect. In a high-heat environment, your patient faces increased risk of dehydration, electrolyte imbalance (particularly hyponatremia and hypokalemia), and orthostatic hypotension upon exiting. These are manageable risks, not contraindications.</li>
+            <li><strong>Hydration guidance:</strong> Encourage generous hydration <em>before</em> the ceremony — water and electrolyte-rich fluids in the 24 hours prior. Advise him to continue hydrating afterward. Avoid framing this as "medical orders" — frame it as preparation, the way one might prepare for any meaningful physical undertaking.</li>
+            <li><strong>Timing of medication:</strong> At 25 mg, consider whether the dose could be taken <em>after</em> the ceremony that day rather than before, to reduce peak diuretic effect during the sweat. This is a practical adjustment, not a protocol change.</li>
+            <li><strong>Warning signs to share:</strong> Empower your patient with knowledge — dizziness, muscle cramping, confusion, or chest discomfort are reasons to step out of the lodge. Most ceremonies honour participants who listen to their bodies. Leaving a round early is not a failure.</li>
+          </ul>
+          <div class="consideration-box"><strong>Consideration:</strong> Frame your guidance as: <em>"I want to help you go into this ceremony feeling prepared and strong"</em> — not <em>"Here are the dangers you need to watch out for."</em> The first centres his agency and the ceremony's value. The second centres clinical anxiety.</div>`
+        },
+        {
+          type: 'guideline', tag: '4 · After the Ceremony',
+          content: `<p class="note-text">Follow up. Ask him how it went — not just "did you feel dizzy?" but "how was the experience for you?" This communicates that you see the whole person, not just the hypertension. If he's planning regular participation, this becomes an ongoing conversation you build together over time.</p>`
+        }
+      ]
+    }
+  }
+];
+
+// Fallback response
+const fallbackResponse = {
+  intro: `Thank you for your question. While I may not have a specific guideline on this exact topic, I can offer some <span class="highlight">general principles for culturally safe care</span> with Indigenous patients.`,
+  sections: [
+    {
+      type: 'bullets',
+      content: `<ul class="bullet-list">
+        <li><strong>Position yourself as a learner:</strong> You do not need to be an expert in every Nation's traditions. Humility and curiosity are more valuable than encyclopedic knowledge.</li>
+        <li><strong>Ask, don't assume:</strong> Every patient's relationship with their culture is unique. Some may be deeply connected to traditional practices; others may be in the process of reconnecting.</li>
+        <li><strong>Recognize systemic context:</strong> Many health disparities in Indigenous communities are the direct result of colonization, not individual choices. Frame your understanding accordingly.</li>
+        <li><strong>Connect with community resources:</strong> Build relationships with local Indigenous health organizations, Elders, and cultural workers who can support your patient's care journey.</li>
+      </ul>`
+    },
+    {
+      type: 'guideline', tag: 'Further Learning',
+      content: `<div class="consideration-box"><strong>Suggestion:</strong> For more specific guidance, consider consulting with Indigenous health organizations such as Anishnawbe Health Toronto, the National Aboriginal Health Organization, or your regional Indigenous health authority. You can also rephrase your question to focus on a specific clinical scenario.</div>`
+    }
+  ]
+};
+
+// ─── Response Matching ────────────────────────────────────────
+
+function findEntry(query) {
+  const q = query.toLowerCase();
+  let bestMatch = null;
+  let bestScore = 0;
+  for (const entry of knowledgeBase) {
+    const score = entry.keywords.filter(kw => q.includes(kw)).length;
+    if (score > bestScore) { bestScore = score; bestMatch = entry; }
+  }
+  return bestScore > 0 ? bestMatch : null;
+}
+
+function findResponse(query) {
+  const entry = findEntry(query);
+  return entry ? entry.response : fallbackResponse;
+}
+
+// ─── DOM Helpers ──────────────────────────────────────────────
+
+function addUserBubble(text) {
+  const es = document.getElementById('emptyState');
+  if (es) es.remove();
+  const div = document.createElement('div');
+  div.className = 'msg-user';
+  div.innerHTML = `<div class="label">Clinician</div><div class="bubble">${escapeHTML(text)}</div>`;
+  chat.appendChild(div);
+  scrollToBottom();
+}
+
+function addThinkingBubble() {
+  const div = document.createElement('div');
+  div.className = 'msg-ai';
+  div.id = 'thinkingBubble';
+  div.innerHTML = `<div class="label">EduCareAI · Clinical Guideline <div class="thinking-dots"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(div);
+  scrollToBottom();
+  return div;
+}
+
+function escapeHTML(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function scrollToBottom() {
+  requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+}
+
+// ─── Streaming Response ───────────────────────────────────────
+
+async function streamResponse(responseData) {
+  const thinking = document.getElementById('thinkingBubble');
+  if (thinking) thinking.remove();
+
+  const div = document.createElement('div');
+  div.className = 'msg-ai';
+  div.innerHTML = `<div class="label">EduCareAI · Clinical Guideline</div><div class="bubble"></div>`;
+  chat.appendChild(div);
+  const bubble = div.querySelector('.bubble');
+
+  // Stream the intro
+  const introDiv = document.createElement('div');
+  introDiv.className = 'resp-intro';
+  bubble.appendChild(introDiv);
+  await streamHTML(introDiv, responseData.intro, 12);
+
+  // Stream each section
+  for (let i = 0; i < responseData.sections.length; i++) {
+    const section = responseData.sections[i];
+    await sleep(200);
+
+    if (section.type === 'heading') {
+      const h = document.createElement('div');
+      h.className = 'section-heading';
+      h.textContent = section.title;
+      h.style.opacity = '0';
+      bubble.appendChild(h);
+      await fadeIn(h);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = section.content;
+      wrapper.style.opacity = '0';
+      bubble.appendChild(wrapper);
+      await fadeIn(wrapper);
+    } else if (section.type === 'guideline') {
+      const tag = document.createElement('div');
+      tag.className = 'guideline-tag';
+      tag.innerHTML = section.tag;
+      tag.style.opacity = '0';
+      bubble.appendChild(tag);
+      await fadeIn(tag);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = section.content;
+      wrapper.style.opacity = '0';
+      bubble.appendChild(wrapper);
+      await fadeIn(wrapper);
+    } else {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = section.content;
+      wrapper.style.opacity = '0';
+      bubble.appendChild(wrapper);
+      await fadeIn(wrapper);
+    }
+    scrollToBottom();
+  }
+
+  // Render follow-up question if present
+  if (responseData.followUp) {
+    await sleep(300);
+    const fq = document.createElement('div');
+    fq.className = 'followup-question';
+    fq.innerHTML = responseData.followUp.question;
+    fq.style.opacity = '0';
+    bubble.appendChild(fq);
+    await fadeIn(fq);
+    scrollToBottom();
+  }
+}
+
+async function streamHTML(el, html, charDelay) {
+  el.innerHTML = html;
+  el.style.opacity = '0';
+  await fadeIn(el, 400);
+  scrollToBottom();
+}
+
+function fadeIn(el, duration = 350) {
+  return new Promise(resolve => {
+    el.style.transition = `opacity ${duration}ms ease, transform ${duration}ms ease`;
+    el.style.transform = 'translateY(6px)';
+    requestAnimationFrame(() => {
+      el.style.opacity = '1';
+      el.style.transform = 'translateY(0)';
+      setTimeout(resolve, duration);
     });
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── Send Message (with multi-turn support) ───────────────────
+
+async function sendMessage(text) {
+  if (isGenerating) return;
+  const msg = text || inputField.value.trim();
+  if (!msg) return;
+
+  isGenerating = true;
+  sendBtn.disabled = true;
+  inputField.value = '';
+  inputField.style.height = 'auto';
+
+  addUserBubble(msg);
+  await sleep(400);
+  addThinkingBubble();
+  scrollToBottom();
+
+  // Simulate thinking delay
+  await sleep(1200 + Math.random() * 800);
+
+  // Check if we're in a follow-up state
+  if (conversationState === 'awaiting_hctz_dosage' && activeMultiTurnEntry) {
+    const responseData = activeMultiTurnEntry.followUpResponse;
+    await streamResponse(responseData);
+    conversationState = null;
+    activeMultiTurnEntry = null;
+  } else {
+    const entry = findEntry(msg);
+    if (entry && entry.multiTurn) {
+      // Multi-turn: show part 1, set state for follow-up
+      await streamResponse(entry.response);
+      conversationState = entry.response.followUp.nextState;
+      activeMultiTurnEntry = entry;
+    } else {
+      const responseData = findResponse(msg);
+      await streamResponse(responseData);
+    }
   }
 
-  // Helper: fade in a sub-section
-  function fadeSection(id, delay = 0) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const el = document.getElementById(id);
-        el.style.animation = 'fadeUp 0.45s ease forwards';
-        setTimeout(resolve, 450);
-      }, delay);
-    });
+  isGenerating = false;
+  sendBtn.disabled = false;
+  inputField.focus();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
   }
+}
 
-  // Helper: typewrite text into input bar
-  function typewrite(text, speed = 38) {
-    return new Promise(resolve => {
-      const span = document.getElementById('typewriterSpan');
-      span.textContent = '';
-      let i = 0;
-      const interval = setInterval(() => {
-        span.textContent += text[i];
-        i++;
-        if (i >= text.length) { clearInterval(interval); resolve(); }
-      }, speed);
-    });
-  }
+// Auto-resize textarea
+inputField.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
 
-  // Helper: clear input bar
-  function clearInput() {
-    document.getElementById('typewriterSpan').textContent = '';
-  }
+function clearChat() {
+  chat.innerHTML = `<div class="empty-state" id="emptyState">
+    <div class="empty-icon">✦</div>
+    <p>Ask a question about culturally safe<br>Indigenous health care practices</p>
+  </div>`;
+  conversationHistory = [];
+  conversationState = null;
+  activeMultiTurnEntry = null;
+  inputField.focus();
+}
 
-  // Helper: scroll chat to bottom
-  function scrollDown() {
-    const chat = document.getElementById('chat');
-    chat.scrollTop = chat.scrollHeight;
-  }
+// ─── Auto-play sequence for screen recording ─────────────────
 
-  // Main sequence
-  async function runSequence() {
-    // Wait for window animation
-    await new Promise(r => setTimeout(r, 1200));
+function typeIntoInput(text, speed = 32) {
+  return new Promise(resolve => {
+    inputField.value = '';
+    let i = 0;
+    const interval = setInterval(() => {
+      inputField.value += text[i];
+      // Trigger resize
+      inputField.style.height = 'auto';
+      inputField.style.height = Math.min(inputField.scrollHeight, 100) + 'px';
+      i++;
+      if (i >= text.length) { clearInterval(interval); resolve(); }
+    }, speed);
+  });
+}
 
-    // === TURN 1 ===
-    // Type Q1 in input bar
-    await typewrite('My patient identifies as Two-Spirited. What does that mean?', 36);
-    await new Promise(r => setTimeout(r, 600));
+async function autoPlay() {
+  // Wait for window animation
+  await sleep(1400);
 
-    // Send: clear input, show user bubble
-    clearInput();
-    await show('q1', 100);
-    scrollDown();
+  // ── Turn 1: Sweat lodge question ──
+  await typeIntoInput('I have a 54 M patient with hypertension currently controlled with hydrochlorothiazide. He is attending his first sweat lodge ceremony this week. As his PCP, what should I consider?', 30);
+  await sleep(800);
 
-    // Show thinking indicator
-    await show('thinking1', 500);
-    scrollDown();
-    await new Promise(r => setTimeout(r, 1400));
+  // "Press send"
+  await sendMessage();
 
-    // Hide thinking, show AI response
-    document.getElementById('thinking1').style.display = 'none';
-    await show('a1', 100);
-    scrollDown();
+  // Pause before turn 2
+  await sleep(2000);
 
-    // Reveal sub-sections
-    await fadeSection('a1s1', 300);
-    scrollDown();
-    await fadeSection('a1s2', 500);
-    scrollDown();
+  // ── Turn 2: Dosage answer ──
+  await typeIntoInput('He is taking 25 mg daily', 38);
+  await sleep(700);
 
-    // Pause before turn 2
-    await new Promise(r => setTimeout(r, 1200));
+  await sendMessage();
+}
 
-    // === TURN 2 ===
-    // Type Q2 in input bar
-    await typewrite('Is there any special consideration when providing mental health care to them?', 36);
-    await new Promise(r => setTimeout(r, 600));
-
-    // Send
-    clearInput();
-    await show('q2', 100);
-    scrollDown();
-
-    // Show thinking
-    await show('thinking2', 500);
-    scrollDown();
-    await new Promise(r => setTimeout(r, 1400));
-
-    // Hide thinking, show AI response 2
-    document.getElementById('thinking2').style.display = 'none';
-    await show('a2', 100);
-    scrollDown();
-
-    // Reveal sub-sections
-    await fadeSection('a2s1', 300);
-    scrollDown();
-    await fadeSection('a2s2', 550);
-    scrollDown();
-    await fadeSection('a2s3', 550);
-    scrollDown();
-  }
-
-  runSequence();
+autoPlay();
 </script>
 
 </body>
